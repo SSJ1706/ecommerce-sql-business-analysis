@@ -117,7 +117,7 @@ SELECT TOP 5
     SUM(payment_value) AS monthly_revenue
 FROM V_orders_enriched
 GROUP BY order_month
-ORDER BY monthly_revenue ;
+ORDER BY monthly_revenue;
 
 
 -------------------------------------- Customer Analysis-------------------------------------------
@@ -186,6 +186,53 @@ FROM V_customer_analytics
 GROUP BY customer_unique_id
 HAVING SUM(payment_value) > 1000
 ORDER BY total_revenue DESC;
+
+--Fraction of Customers with more than 1 order--
+WITH customer_level AS (
+    SELECT
+        customer_unique_id,
+        COUNT(DISTINCT order_id) AS total_orders
+    FROM V_customer_analytics
+    WHERE customer_unique_id IS NOT NULL
+    GROUP BY customer_unique_id
+)
+SELECT
+    COUNT(*) AS total_customers,
+    SUM(CASE WHEN total_orders > 1 THEN 1 ELSE 0 END) AS repeat_customers,
+    SUM(CASE WHEN total_orders = 1 THEN 1 ELSE 0 END) AS one_time_customers,
+    CAST(100.0 * SUM(CASE WHEN total_orders > 1 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0) AS DECIMAL(6,2)) AS repeat_customer_percentage
+FROM customer_level;
+
+-- Revenue contribution of repeat customers--
+WITH customer_summary AS (
+    SELECT
+        customer_unique_id,
+        COUNT(DISTINCT order_id) AS total_orders,
+        SUM(payment_value) AS total_revenue
+    FROM V_customer_analytics
+    GROUP BY customer_unique_id
+),
+repeat_customer_revenue AS
+(
+    SELECT
+        COUNT(*) AS repeat_customer_count,
+        SUM(total_orders) AS repeat_customer_orders,
+        SUM(total_revenue) AS repeat_customer_revenue
+    FROM customer_summary
+    WHERE total_orders > 1
+)
+SELECT
+    repeat_customer_count,
+    repeat_customer_orders,
+    CAST(
+        repeat_customer_revenue AS DECIMAL(18,2)
+    ) AS repeat_customer_revenue,
+    CAST(
+        100.0 * repeat_customer_revenue / NULLIF((SELECT SUM(total_revenue) FROM customer_summary), 0)
+        AS DECIMAL(6,2)
+    ) AS repeat_customer_revenue_share_pct
+FROM repeat_customer_revenue;
+
 
 
 -------------------------------------- Delivery Analysis-------------------------------------------
@@ -546,7 +593,7 @@ CROSS JOIN total_revenue
 indicating a highly concentrated seller ecosystem 
 where a small fraction of sellers drive the majority of sales.*/
 
---Avg Order value per seller--
+--Avg Order Value (AOV) wrt seller as the grain instead of no of orders--
 SELECT
     seller_id,
     ROUND(AVG(price), 2) AS avg_revenue_per_seller
