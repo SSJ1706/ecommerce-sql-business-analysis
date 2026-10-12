@@ -291,7 +291,7 @@ WHERE order_delivered_customer_date > order_estimated_delivery_date;
 --Amount Of Delay Caused--
 SELECT
     order_id,
-    DATEDIFF(DAY, order_delivered_customer_date, order_estimated_delivery_date) AS delay_occured
+    DATEDIFF(DAY, order_estimated_delivery_date, order_delivered_customer_date) AS delay_occured
 FROM V_delivery_analytics
 
 --Percentage Late Orders--
@@ -540,7 +540,7 @@ CREATE VIEW V_sellers_analysis AS
 --Sellers with most orders--
 SELECT TOP 10
     seller_id,
-    COUNT(order_id) AS number_of_orders_per_seller
+    COUNT(DISTINCT order_id) AS number_of_orders_per_seller
 FROM V_sellers_analysis
 GROUP BY seller_id
 ORDER BY number_of_orders_per_seller DESC;
@@ -548,7 +548,7 @@ ORDER BY number_of_orders_per_seller DESC;
 --Sellers with least orders--
 SELECT
     seller_id,
-    COUNT(order_id) AS number_of_orders_per_seller
+    COUNT(DISTINCT order_id) AS number_of_orders_per_seller
 FROM V_sellers_analysis
 GROUP BY seller_id
 ORDER BY number_of_orders_per_seller;
