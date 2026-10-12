@@ -1,4 +1,3 @@
-
 --------------------------------------- Seller Analysis--------------------------------------------
 
 ------------Joining order_items, orders, sellers and products table to preview data----------------
@@ -27,7 +26,7 @@ CREATE VIEW V_sellers_analysis AS
 --Sellers with most orders--
 SELECT TOP 10
     seller_id,
-    COUNT(order_id) AS number_of_orders_per_seller
+    COUNT(DISTINCT order_id) AS number_of_orders_per_seller
 FROM V_sellers_analysis
 GROUP BY seller_id
 ORDER BY number_of_orders_per_seller DESC;
@@ -35,7 +34,7 @@ ORDER BY number_of_orders_per_seller DESC;
 --Sellers with least orders--
 SELECT
     seller_id,
-    COUNT(order_id) AS number_of_orders_per_seller
+    COUNT(DISTINCT order_id) AS number_of_orders_per_seller
 FROM V_sellers_analysis
 GROUP BY seller_id
 ORDER BY number_of_orders_per_seller;
@@ -80,7 +79,7 @@ CROSS JOIN total_revenue
 indicating a highly concentrated seller ecosystem 
 where a small fraction of sellers drive the majority of sales.*/
 
---Avg Order value per seller--
+--Avg Order Value (AOV) wrt seller as the grain instead of no of orders--
 SELECT
     seller_id,
     ROUND(AVG(price), 2) AS avg_revenue_per_seller
@@ -99,7 +98,7 @@ ORDER BY no_of_sellers DESC;
 --Product variety per seller--
 SELECT
     seller_id,
-    COUNT(DISTINCT(product_id)) AS no_of_products
+    COUNT(product_id) AS no_of_products
 FROM V_sellers_analysis
 GROUP BY seller_id
 ORDER BY no_of_products DESC;
